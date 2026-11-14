@@ -393,7 +393,7 @@
 
   // ===== Abrir horários =====
   const NOMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  const PADRAO = { dias: [1, 2, 3, 4, 5, 6], ini: '08:30', fim: '20:00', int: '30', alm: true, almDe: '12:00', almAte: '13:00' };
+  const PADRAO = { dias: [1, 2, 4, 5, 6], ini: '08:30', fim: '20:00', int: '30', alm: true, almDe: '12:00', almAte: '13:00' };
   let cfg = PADRAO;
   try { cfg = { ...PADRAO, ...JSON.parse(localStorage.getItem('jb-cfg') || '{}') }; } catch (_) {}
   [1, 2, 3, 4, 5, 6, 0].forEach(d => {
