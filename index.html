@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Junior Barbershop · Agende seu horário</title>
+<meta name="description" content="Agende seu horário na Junior Barbershop em poucos toques. Segunda a sábado, das 8h30 às 20h.">
+<meta name="theme-color" content="#111111">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#111111; --card:#1a1a1a; --card2:#222; --line:#2e2e2e;
+    --text:#f2ede4; --muted:#9d978d; --brass:#c9a46a; --brass-d:#a8834b;
+    --ok:#4fbf7a; --err:#e06a5a; --r:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:16px;line-height:1.5;min-height:100vh}
+  button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+  input{font:inherit;color:inherit}
+  .wrap{max-width:640px;margin:0 auto;padding:0 20px}
+
+  /* Hero */
+  .hero{position:relative;padding:56px 0 40px;text-align:center;border-bottom:1px solid var(--line);
+    background:
+      repeating-linear-gradient(135deg,rgba(201,164,106,.05) 0 14px,transparent 14px 28px),
+      radial-gradient(ellipse at top,#1d1a15 0%,var(--bg) 70%)}
+  .pole{width:10px;height:54px;margin:0 auto 22px;border-radius:6px;
+    background:repeating-linear-gradient(160deg,#b8342e 0 8px,#f2ede4 8px 16px,#1f3f74 16px 24px,#f2ede4 24px 32px);
+    box-shadow:0 0 0 3px #2a2a2a,0 0 0 4px var(--brass-d)}
+  .brand{font-family:Oswald,sans-serif;font-weight:600;font-size:clamp(46px,13vw,76px);line-height:.95;letter-spacing:.02em}
+  .brand-sub{font-family:Oswald,sans-serif;font-weight:400;letter-spacing:.55em;font-size:14px;color:var(--brass);margin:10px 0 18px;padding-left:.55em}
+  .hours{color:var(--muted);font-size:14px}
+  .hero-actions{display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;border-radius:999px;font-weight:600;font-size:15px;text-decoration:none;transition:transform .15s,background .15s,opacity .15s}
+  .btn:active{transform:scale(.97)}
+  .btn-brass{background:var(--brass);color:#16120c}
+  .btn-brass:hover{background:#d6b37c}
+  .btn-ghost{border:1px solid var(--line);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--brass)}
+  .btn[disabled]{opacity:.45;pointer-events:none}
+  .btn svg{width:18px;height:18px}
+
+  /* Steps */
+  main{padding:34px 0 60px}
+  .step{margin-bottom:34px}
+  .step-h{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+  .num{font-family:Oswald,sans-serif;color:var(--brass);font-size:15px;letter-spacing:.08em}
+  .step-h h2{font-family:Oswald,sans-serif;font-weight:500;font-size:22px;letter-spacing:.03em;text-transform:uppercase}
+
+  .services{display:grid;gap:10px}
+  .svc{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);text-align:left;transition:border-color .15s,background .15s}
+  .svc:hover{border-color:#4a4335}
+  .svc.sel{border-color:var(--brass);background:#211d16}
+  .svc-name{font-weight:600}
+  .svc-meta{color:var(--muted);font-size:13px}
+  .svc-price{font-family:Oswald,sans-serif;font-size:19px;color:var(--brass);white-space:nowrap}
+
+  .days{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory;scrollbar-width:none}
+  .days::-webkit-scrollbar{display:none}
+  .day{flex:0 0 auto;width:68px;padding:12px 0;border-radius:var(--r);background:var(--card);border:1px solid var(--line);text-align:center;scroll-snap-align:start;transition:border-color .15s,background .15s}
+  .day .w{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .day .d{font-family:Oswald,sans-serif;font-size:24px;line-height:1.2}
+  .day .m{font-size:12px;color:var(--muted);text-transform:lowercase}
+  .day.sel{background:var(--brass);border-color:var(--brass);color:#16120c}
+  .day.sel .w,.day.sel .m{color:#3b2f1c}
+
+  .times{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+  .time{padding:12px 0;border-radius:10px;background:var(--card);border:1px solid var(--line);font-weight:600;font-variant-numeric:tabular-nums;transition:border-color .15s,background .15s}
+  .time:hover{border-color:#4a4335}
+  .time.sel{background:var(--brass);border-color:var(--brass);color:#16120c}
+  .period{grid-column:1/-1;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  .period:first-child{margin-top:0}
+
+  .empty{padding:22px;border:1px dashed var(--line);border-radius:var(--r);color:var(--muted);text-align:center;font-size:15px}
+  .empty a{color:var(--brass)}
+
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .field input{width:100%;padding:14px 16px;border-radius:12px;background:var(--card);border:1px solid var(--line);outline:none;transition:border-color .15s}
+  .field input:focus{border-color:var(--brass)}
+
+  .summary{padding:16px 18px;border-radius:var(--r);background:var(--card2);border:1px solid var(--line);margin-bottom:14px;font-size:15px}
+  .summary strong{color:var(--brass);font-weight:600}
+  .msg{margin-top:12px;font-size:14px;min-height:1.2em}
+  .msg.err{color:var(--err)}
+  .full{width:100%}
+
+  /* Success */
+  .done{display:none;text-align:center;padding:48px 0 60px}
+  .done.show{display:block}
+  .check{width:64px;height:64px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;background:#1d2a20;border:1px solid #2f5a3c;color:var(--ok)}
+  .check svg{width:30px;height:30px}
+  .done h2{font-family:Oswald,sans-serif;font-weight:500;font-size:30px;text-transform:uppercase;margin-bottom:8px}
+  .done p{color:var(--muted);margin-bottom:22px}
+  .done .summary{text-align:left;margin:0 auto 22px;max-width:420px}
+  .done .actions{display:flex;flex-direction:column;gap:10px;max-width:420px;margin:0 auto}
+
+  footer{border-top:1px solid var(--line);padding:26px 0 40px;text-align:center;color:var(--muted);font-size:13px}
+  footer a{color:var(--muted)}
+
+  .skeleton{height:52px;border-radius:12px;background:linear-gradient(90deg,var(--card) 0%,#232323 50%,var(--card) 100%);background-size:200% 100%;animation:sh 1.2s infinite}
+  @keyframes sh{to{background-position:-200% 0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="pole" aria-hidden="true"></div>
+    <h1 class="brand">JUNIOR</h1>
+    <div class="brand-sub">BARBERSHOP</div>
+    <p class="hours">Segunda a sábado · 8h30 às 20h</p>
+    <div class="hero-actions">
+      <a class="btn btn-brass" href="#agendar">Agendar horário</a>
+      <a class="btn btn-ghost" id="whatsTop" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.2-.2-.5-.3Z"/></svg>
+        WhatsApp
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="agendar">
+  <div id="fluxo">
+    <section class="step" id="stepServico">
+      <div class="step-h"><span class="num">01</span><h2>Serviço</h2></div>
+      <div class="services" id="servicos"><div class="skeleton"></div><div class="skeleton"></div></div>
+    </section>
+
+    <section class="step">
+      <div class="step-h"><span class="num" id="numDia">02</span><h2>Dia</h2></div>
+      <div class="days" id="dias"><div class="skeleton" style="width:100%"></div></div>
+    </section>
+
+    <section class="step">
+      <div class="step-h"><span class="num" id="numHora">03</span><h2>Horário</h2></div>
+      <div class="times" id="horas"></div>
+    </section>
+
+    <section class="step">
+      <div class="step-h"><span class="num" id="numDados">04</span><h2>Seus dados</h2></div>
+      <form id="form" novalidate>
+        <div class="summary" id="resumo">Escolha um dia e um horário acima.</div>
+        <div class="field">
+          <label for="nome">Seu nome</label>
+          <input id="nome" name="nome" autocomplete="name" placeholder="Como você se chama?" maxlength="60" required>
+        </div>
+        <div class="field">
+          <label for="whats">Seu WhatsApp</label>
+          <input id="whats" name="whats" type="tel" inputmode="numeric" autocomplete="tel" placeholder="(41) 99999-9999" maxlength="16" required>
+        </div>
+        <button class="btn btn-brass full" id="confirmar" type="submit" disabled>Confirmar agendamento</button>
+        <p class="msg" id="msg" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </div>
+
+  <section class="done" id="done" aria-live="polite">
+    <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h2>Horário reservado</h2>
+    <p>Te esperamos na barbearia.</p>
+    <div class="summary" id="doneResumo"></div>
+    <div class="actions">
+      <a class="btn btn-brass" id="doneWhats" target="_blank" rel="noopener">Avisar o Junior no WhatsApp</a>
+      <button class="btn btn-ghost" id="novo" type="button">Fazer outro agendamento</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Junior Barbershop · Segunda a sábado, 8h30 às 20h</p>
+    <p style="margin-top:8px"><a href="admin.html">Área do barbeiro</a></p>
+  </div>
+</footer>
+
+<script>
+  // ===== Configuração =====
+  const SUPABASE_URL = 'https://gmaxqfmvjpwspfbjfxrp.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_vK42CyhdOVBp1iuv1QQpfA_tL1CdM4i';
+  const WHATSAPP = '554187893947';
+  const DIAS_A_FRENTE = 21;
+  const TZ = 'America/Sao_Paulo';
+
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+  const $ = id => document.getElementById(id);
+
+  const estado = { servicos: [], porDia: new Map(), servico: null, dia: null, horario: null };
+
+  // ===== Datas =====
+  const chaveDia = d => new Date(d).toLocaleDateString('en-CA', { timeZone: TZ });
+  const hora = d => new Date(d).toLocaleTimeString('pt-BR', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  const meioDia = k => new Date(k + 'T12:00:00-03:00');
+  const diaLongo = k => meioDia(k).toLocaleDateString('pt-BR', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
+  const moeda = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  function el(tag, cls, html) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  $('whatsTop').href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Olá Junior! Vim pelo site da barbearia.')}`;
+
+  // ===== Carregar dados =====
+  async function carregar() {
+    const agora = new Date().toISOString();
+    const ate = new Date(Date.now() + DIAS_A_FRENTE * 864e5).toISOString();
+    const [s, h] = await Promise.all([
+      db.from('servicos').select('id,nome,duracao_min,preco').order('preco', { ascending: true, nullsFirst: false }),
+      db.from('horarios').select('id,inicio').gt('inicio', agora).lte('inicio', ate).order('inicio').limit(2000)
+    ]);
+
+    if (s.error || h.error) {
+      console.error(s.error || h.error);
+      $('dias').innerHTML = '';
+      $('horas').innerHTML = `<div class="empty">Não foi possível carregar a agenda agora. Tente de novo em instantes ou <a href="${$('whatsTop').href}" target="_blank" rel="noopener">chame no WhatsApp</a>.</div>`;
+      $('servicos').innerHTML = '';
+      return;
+    }
+
+    estado.servicos = s.data || [];
+    estado.porDia = new Map();
+    for (const row of h.data || []) {
+      const k = chaveDia(row.inicio);
+      if (!estado.porDia.has(k)) estado.porDia.set(k, []);
+      estado.porDia.get(k).push(row);
+    }
+
+    if (estado.servico && !estado.servicos.some(x => x.id === estado.servico.id)) estado.servico = null;
+    if (!estado.dia || !estado.porDia.has(estado.dia)) estado.dia = estado.porDia.keys().next().value || null;
+    if (estado.horario && !(estado.porDia.get(estado.dia) || []).some(x => x.id === estado.horario.id)) estado.horario = null;
+
+    render();
+  }
+
+  // ===== Renderização =====
+  function render() {
+    renderServicos();
+    renderDias();
+    renderHoras();
+    renderResumo();
+  }
+
+  function renderServicos() {
+    const box = $('servicos');
+    const temServicos = estado.servicos.length > 0;
+    $('stepServico').style.display = temServicos ? '' : 'none';
+    $('numDia').textContent = temServicos ? '02' : '01';
+    $('numHora').textContent = temServicos ? '03' : '02';
+    $('numDados').textContent = temServicos ? '04' : '03';
+    box.innerHTML = '';
+    for (const sv of estado.servicos) {
+      const b = el('button', 'svc' + (estado.servico?.id === sv.id ? ' sel' : ''));
+      b.type = 'button';
+      b.setAttribute('aria-pressed', estado.servico?.id === sv.id);
+      const preco = sv.preco != null ? `<span class="svc-price">${moeda(sv.preco)}</span>` : '';
+      b.innerHTML = `<span><span class="svc-name">${esc(sv.nome)}</span><br><span class="svc-meta">${sv.duracao_min ? sv.duracao_min + ' min' : ''}</span></span>${preco}`;
+      b.onclick = () => { estado.servico = sv; render(); };
+      box.appendChild(b);
+    }
+  }
+
+  function renderDias() {
+    const box = $('dias');
+    box.innerHTML = '';
+    if (estado.porDia.size === 0) {
+      box.innerHTML = `<div class="empty" style="flex:1">Nenhum horário livre nos próximos dias. <a href="${$('whatsTop').href}" target="_blank" rel="noopener">Fale com o Junior no WhatsApp</a>.</div>`;
+      return;
+    }
+    for (const k of estado.porDia.keys()) {
+      const d = meioDia(k);
+      const b = el('button', 'day' + (k === estado.dia ? ' sel' : ''));
+      b.type = 'button';
+      b.setAttribute('aria-label', diaLongo(k));
+      b.innerHTML =
+        `<div class="w">${d.toLocaleDateString('pt-BR', { timeZone: TZ, weekday: 'short' }).replace('.', '')}</div>` +
+        `<div class="d">${d.toLocaleDateString('pt-BR', { timeZone: TZ, day: '2-digit' })}</div>` +
+        `<div class="m">${d.toLocaleDateString('pt-BR', { timeZone: TZ, month: 'short' }).replace('.', '')}</div>`;
+      b.onclick = () => { estado.dia = k; estado.horario = null; render(); };
+      box.appendChild(b);
+    }
+  }
+
+  function renderHoras() {
+    const box = $('horas');
+    box.innerHTML = '';
+    const lista = estado.porDia.get(estado.dia) || [];
+    if (!lista.length) return;
+    let periodoAtual = '';
+    for (const hr of lista) {
+      const h = Number(hora(hr.inicio).slice(0, 2));
+      const periodo = h < 12 ? 'Manhã' : h < 18 ? 'Tarde' : 'Noite';
+      if (periodo !== periodoAtual) { box.appendChild(el('div', 'period', periodo)); periodoAtual = periodo; }
+      const b = el('button', 'time' + (estado.horario?.id === hr.id ? ' sel' : ''), hora(hr.inicio));
+      b.type = 'button';
+      b.onclick = () => { estado.horario = hr; render(); $('nome').focus({ preventScroll: true }); $('form').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+      box.appendChild(b);
+    }
+  }
+
+  function textoResumo() {
+    if (!estado.horario) return null;
+    const partes = [];
+    if (estado.servico) partes.push(`<strong>${esc(estado.servico.nome)}</strong>`);
+    partes.push(`${diaLongo(estado.dia)}, às <strong>${hora(estado.horario.inicio)}</strong>`);
+    return partes.join('<br>');
+  }
+
+  function renderResumo() {
+    const t = textoResumo();
+    $('resumo').innerHTML = t || 'Escolha um dia e um horário acima.';
+    validar();
+  }
+
+  // ===== Formulário =====
+  const soDigitos = s => s.replace(/\D/g, '');
+  $('whats').addEventListener('input', e => {
+    let d = soDigitos(e.target.value).slice(0, 11);
+    if (d.length > 6) e.target.value = `(${d.slice(0, 2)}) ${d.slice(2, d.length - 4)}-${d.slice(-4)}`;
+    else if (d.length > 2) e.target.value = `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    else e.target.value = d;
+    validar();
+  });
+  $('nome').addEventListener('input', validar);
+
+  function validar() {
+    const precisaServico = estado.servicos.length > 0;
+    const ok = estado.horario && (!precisaServico || estado.servico) &&
+      $('nome').value.trim().length >= 2 && soDigitos($('whats').value).length >= 10;
+    $('confirmar').disabled = !ok;
+    return ok;
+  }
+
+  $('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!validar()) return;
+    const btn = $('confirmar'), msg = $('msg');
+    btn.disabled = true; btn.textContent = 'Reservando…'; msg.textContent = ''; msg.className = 'msg';
+
+    const { data, error } = await db.rpc('reservar_horario', {
+      p_horario_id: estado.horario.id,
+      p_servico_id: estado.servico?.id ?? null,
+      p_nome: $('nome').value.trim(),
+      p_whatsapp: soDigitos($('whats').value)
+    });
+
+    btn.textContent = 'Confirmar agendamento';
+    if (error) {
+      console.error(error);
+      msg.className = 'msg err';
+      msg.textContent = 'Algo deu errado ao reservar. Tente de novo.';
+      validar();
+      return;
+    }
+    if (data !== true) {
+      msg.className = 'msg err';
+      msg.textContent = 'Esse horário acabou de ser reservado por outra pessoa. Escolha outro, por favor.';
+      estado.horario = null;
+      await carregar();
+      document.getElementById('agendar').scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    mostrarSucesso();
+  });
+
+  function mostrarSucesso() {
+    const nome = $('nome').value.trim();
+    const quando = `${diaLongo(estado.dia)}, às ${hora(estado.horario.inicio)}`;
+    $('doneResumo').innerHTML = textoResumo();
+    const texto = `Olá Junior! Sou ${nome} e acabei de agendar pelo site: ${estado.servico ? estado.servico.nome + ' — ' : ''}${quando}.`;
+    $('doneWhats').href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`;
+    $('fluxo').style.display = 'none';
+    $('done').classList.add('show');
+    window.scrollTo({ top: $('agendar').offsetTop - 10, behavior: 'smooth' });
+  }
+
+  $('novo').onclick = () => {
+    estado.horario = null;
+    $('done').classList.remove('show');
+    $('fluxo').style.display = '';
+    $('msg').textContent = '';
+    carregar();
+  };
+
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('done').classList.contains('show')) carregar(); });
+  setInterval(() => { if (!document.hidden && !$('done').classList.contains('show')) carregar(); }, 60000);
+
+  carregar();
+</script>
+</body>
+</html>

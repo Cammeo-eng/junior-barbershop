@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel do barbeiro · Junior Barbershop</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#111111">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#111111; --card:#1a1a1a; --card2:#222; --line:#2e2e2e;
+    --text:#f2ede4; --muted:#9d978d; --brass:#c9a46a;
+    --ok:#4fbf7a; --err:#e06a5a; --warn:#d9a441; --r:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.5;min-height:100vh}
+  button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+  input,select{font:inherit;color:inherit}
+  .wrap{max-width:760px;margin:0 auto;padding:0 18px}
+  h1,h2,h3{font-family:Oswald,sans-serif;font-weight:500;letter-spacing:.03em}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap;transition:background .15s,border-color .15s,opacity .15s}
+  .btn-brass{background:var(--brass);color:#16120c}
+  .btn-ghost{border:1px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--brass)}
+  .btn-danger{border:1px solid #5a2a24;color:#f0a197}
+  .btn-sm{padding:6px 12px;font-size:13px}
+  .btn[disabled]{opacity:.45;pointer-events:none}
+  .full{width:100%}
+
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .in{width:100%;padding:11px 14px;border-radius:10px;background:var(--card);border:1px solid var(--line);outline:none}
+  .in:focus{border-color:var(--brass)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+  /* Login */
+  .login{max-width:380px;margin:12vh auto 0;padding:0 20px}
+  .login h1{font-size:34px;text-align:center;line-height:1}
+  .login .sub{text-align:center;color:var(--brass);letter-spacing:.4em;font-family:Oswald,sans-serif;font-size:13px;margin:8px 0 30px;padding-left:.4em}
+  .msg{font-size:14px;margin-top:10px;min-height:1.2em}
+  .msg.err{color:var(--err)}
+
+  /* App */
+  .top{position:sticky;top:0;z-index:5;background:rgba(17,17,17,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .top .wrap{display:flex;align-items:center;justify-content:space-between;height:58px}
+  .top h1{font-size:19px}
+  .top h1 span{color:var(--brass)}
+  .tabs{display:flex;gap:4px;padding:12px 0;overflow-x:auto}
+  .tab{padding:9px 14px;border-radius:999px;color:var(--muted);font-weight:600;white-space:nowrap}
+  .tab.on{background:var(--card2);color:var(--text)}
+  .panel{display:none;padding:10px 0 60px}
+  .panel.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
+  .hint{color:var(--muted);font-size:13px}
+
+  /* Agenda */
+  .daynav{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  .daynav .in{flex:1}
+  .daytitle{font-size:22px;text-transform:capitalize;margin:6px 0 4px}
+  .stats{display:flex;gap:14px;color:var(--muted);font-size:13px;margin-bottom:12px;flex-wrap:wrap}
+  .stats b{color:var(--text)}
+  .dayactions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .slot{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:8px}
+  .slot .t{font-family:Oswald,sans-serif;font-size:19px;width:56px;font-variant-numeric:tabular-nums}
+  .slot .info{flex:1;min-width:0}
+  .slot .name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .slot .det{color:var(--muted);font-size:13px}
+  .slot .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+  .b-livre{background:#1d2a20;color:var(--ok)}
+  .b-reservado{background:#2a2316;color:var(--brass)}
+  .b-bloqueado{background:#262626;color:var(--muted)}
+  .slot.reservado{border-color:#4a3e28}
+  .slot.bloqueado{opacity:.6}
+  .add{display:flex;gap:8px;margin-top:14px}
+  .add .in{flex:1}
+
+  .weekdays{display:flex;gap:6px;flex-wrap:wrap}
+  .wd{position:relative}
+  .wd input{position:absolute;opacity:0;pointer-events:none}
+  .wd span{display:block;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:600;font-size:14px;cursor:pointer}
+  .wd input:checked + span{background:var(--brass);border-color:var(--brass);color:#16120c}
+  .wd input:focus-visible + span{outline:2px solid var(--brass);outline-offset:2px}
+  .check{display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer}
+  .check input{width:18px;height:18px;accent-color:var(--brass)}
+
+  .svcrow{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:8px}
+  .svcrow .info{flex:1;min-width:0}
+  .svcrow.off{opacity:.5}
+
+  .empty{padding:20px;border:1px dashed var(--line);border-radius:var(--r);color:var(--muted);text-align:center}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#262626;border:1px solid var(--line);padding:12px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;max-width:90vw;z-index:20}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+  .toast.err{border-color:#5a2a24;color:#f0a197}
+  .hidden{display:none!important}
+  @media (max-width:520px){.slot{flex-wrap:wrap}.slot .acts{width:100%;justify-content:flex-start;padding-left:68px}}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<section class="login hidden" id="telaLogin">
+  <h1>JUNIOR</h1>
+  <div class="sub">PAINEL DO BARBEIRO</div>
+  <form id="formLogin">
+    <div class="field"><label for="email">E-mail</label><input class="in" id="email" type="email" autocomplete="username" required></div>
+    <div class="field"><label for="senha">Senha</label><input class="in" id="senha" type="password" autocomplete="current-password" required></div>
+    <button class="btn btn-brass full" type="submit" id="btnEntrar">Entrar</button>
+    <p class="msg" id="msgLogin"></p>
+  </form>
+</section>
+
+<!-- Painel -->
+<div class="hidden" id="telaApp">
+  <header class="top">
+    <div class="wrap">
+      <h1>JUNIOR <span>· PAINEL</span></h1>
+      <div style="display:flex;gap:6px">
+        <a class="btn btn-ghost btn-sm" href="index.html" target="_blank">Ver site</a>
+        <button class="btn btn-ghost btn-sm" id="sair">Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <nav class="tabs" role="tablist">
+      <button class="tab on" data-tab="agenda">Agenda</button>
+      <button class="tab" data-tab="abrir">Abrir horários</button>
+      <button class="tab" data-tab="servicos">Serviços</button>
+    </nav>
+
+    <!-- Agenda -->
+    <section class="panel on" id="p-agenda">
+      <div class="daynav">
+        <button class="btn btn-ghost btn-sm" id="diaAnt" aria-label="Dia anterior">‹</button>
+        <input class="in" type="date" id="diaSel">
+        <button class="btn btn-ghost btn-sm" id="diaProx" aria-label="Próximo dia">›</button>
+        <button class="btn btn-ghost btn-sm" id="diaHoje">Hoje</button>
+      </div>
+      <h2 class="daytitle" id="diaTitulo"></h2>
+      <div class="stats" id="diaStats"></div>
+      <div class="dayactions">
+        <button class="btn btn-ghost btn-sm" id="fecharDia">Fechar o dia</button>
+        <button class="btn btn-ghost btn-sm" id="reabrirDia">Reabrir o dia</button>
+        <button class="btn btn-ghost btn-sm" id="pausa">Bloquear um intervalo</button>
+      </div>
+      <div class="card hidden" id="boxPausa">
+        <p class="hint" style="margin-bottom:10px">Bloqueia os horários livres dentro do intervalo (almoço, compromisso, imprevisto).</p>
+        <div class="row">
+          <div class="field"><label>De</label><input class="in" type="time" id="pausaDe" value="12:00"></div>
+          <div class="field"><label>Até</label><input class="in" type="time" id="pausaAte" value="13:00"></div>
+        </div>
+        <button class="btn btn-brass btn-sm" id="aplicarPausa">Bloquear intervalo</button>
+      </div>
+      <div id="lista"></div>
+      <div class="add">
+        <input class="in" type="time" id="avulso" aria-label="Horário avulso">
+        <button class="btn btn-ghost" id="addAvulso">+ Horário avulso</button>
+      </div>
+    </section>
+
+    <!-- Abrir horários -->
+    <section class="panel" id="p-abrir">
+      <div class="card">
+        <h3 style="margin-bottom:4px">Abrir horários na agenda</h3>
+        <p class="hint" style="margin-bottom:16px">Crie os horários de uma vez. Os que já existem não são duplicados, e as reservas feitas não mudam.</p>
+        <div class="row">
+          <div class="field"><label for="gDe">De</label><input class="in" type="date" id="gDe"></div>
+          <div class="field"><label for="gAte">Até</label><input class="in" type="date" id="gAte"></div>
+        </div>
+        <div class="field">
+          <label>Dias da semana</label>
+          <div class="weekdays" id="gDias"></div>
+        </div>
+        <div class="row3">
+          <div class="field"><label for="gIni">Abre às</label><input class="in" type="time" id="gIni" value="08:30"></div>
+          <div class="field"><label for="gFim">Fecha às</label><input class="in" type="time" id="gFim" value="20:00"></div>
+          <div class="field"><label for="gInt">Cada horário</label>
+            <select class="in" id="gInt">
+              <option value="20">20 min</option><option value="30" selected>30 min</option>
+              <option value="40">40 min</option><option value="45">45 min</option><option value="60">1 hora</option>
+            </select>
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" id="gAlm" checked> Pausa para almoço</label>
+        <div class="row" id="gAlmBox">
+          <div class="field"><label for="gAlmDe">Almoço de</label><input class="in" type="time" id="gAlmDe" value="12:00"></div>
+          <div class="field"><label for="gAlmAte">Até</label><input class="in" type="time" id="gAlmAte" value="13:00"></div>
+        </div>
+        <p class="hint" id="gPrevia" style="margin:6px 0 14px"></p>
+        <button class="btn btn-brass full" id="gerar">Abrir horários</button>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom:4px">Limpar horários livres</h3>
+        <p class="hint" style="margin-bottom:14px">Apaga os horários <b>livres</b> e <b>bloqueados</b> do período acima. Use pra refazer a agenda (por exemplo, trocar o tempo de cada horário). Reservas não são apagadas.</p>
+        <button class="btn btn-danger full" id="limpar">Apagar horários livres do período</button>
+      </div>
+    </section>
+
+    <!-- Serviços -->
+    <section class="panel" id="p-servicos">
+      <div id="listaServicos"></div>
+      <div class="card">
+        <h3 style="margin-bottom:12px" id="svcTitulo">Novo serviço</h3>
+        <form id="formSvc">
+          <input type="hidden" id="svcId">
+          <div class="field"><label for="svcNome">Nome</label><input class="in" id="svcNome" placeholder="Ex.: Corte degradê" maxlength="60" required></div>
+          <div class="row">
+            <div class="field"><label for="svcPreco">Preço (R$)</label><input class="in" id="svcPreco" type="number" min="0" step="0.01" inputmode="decimal" placeholder="35,00"></div>
+            <div class="field"><label for="svcDur">Duração (min)</label><input class="in" id="svcDur" type="number" min="5" step="5" inputmode="numeric" value="30"></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-brass" type="submit" style="flex:1">Salvar serviço</button>
+            <button class="btn btn-ghost hidden" type="button" id="svcCancelar">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // ===== Configuração =====
+  const SUPABASE_URL = 'https://gmaxqfmvjpwspfbjfxrp.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_vK42CyhdOVBp1iuv1QQpfA_tL1CdM4i';
+  const TZ = 'America/Sao_Paulo';
+
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // ===== Datas (horário de Brasília, -03:00) =====
+  const pad = n => String(n).padStart(2, '0');
+  const hojeK = () => new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+  const addDias = (k, n) => { const d = new Date(k + 'T12:00:00-03:00'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const diaSemana = k => new Date(k + 'T12:00:00-03:00').getUTCDay();
+  const iso = (k, hhmm) => new Date(`${k}T${hhmm}:00-03:00`).toISOString();
+  const hora = d => new Date(d).toLocaleTimeString('pt-BR', { timeZone: TZ, hour: '2-digit', minute: '2-digit' });
+  const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const fromMin = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+  const tituloDia = k => new Date(k + 'T12:00:00-03:00').toLocaleDateString('pt-BR', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
+  const moeda = v => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  let toastT;
+  function toast(t, erro) {
+    const e = $('toast'); e.textContent = t; e.className = 'toast show' + (erro ? ' err' : '');
+    clearTimeout(toastT); toastT = setTimeout(() => e.className = 'toast', 3200);
+  }
+  function falhou(error, texto) { console.error(error); toast(texto || 'Algo deu errado. Tente de novo.', true); }
+
+  // ===== Login =====
+  async function iniciar() {
+    const { data } = await db.auth.getSession();
+    mostrar(!!data.session);
+  }
+  function mostrar(logado) {
+    $('telaLogin').classList.toggle('hidden', logado);
+    $('telaApp').classList.toggle('hidden', !logado);
+    if (logado) { carregarAgenda(); carregarServicos(); atualizarPrevia(); }
+  }
+  $('formLogin').addEventListener('submit', async e => {
+    e.preventDefault();
+    $('btnEntrar').disabled = true; $('msgLogin').textContent = '';
+    const { error } = await db.auth.signInWithPassword({ email: $('email').value.trim(), password: $('senha').value });
+    $('btnEntrar').disabled = false;
+    if (error) { $('msgLogin').className = 'msg err'; $('msgLogin').textContent = 'E-mail ou senha incorretos.'; return; }
+    mostrar(true);
+  });
+  $('sair').onclick = async () => { await db.auth.signOut(); mostrar(false); };
+
+  // ===== Abas =====
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'p-' + t.dataset.tab));
+    if (t.dataset.tab === 'agenda') carregarAgenda();
+  });
+
+  // ===== Agenda =====
+  let diaAtual = hojeK();
+  let slotsDia = [];
+  $('diaSel').value = diaAtual;
+  $('diaSel').onchange = e => { if (e.target.value) { diaAtual = e.target.value; carregarAgenda(); } };
+  $('diaAnt').onclick = () => { diaAtual = addDias(diaAtual, -1); $('diaSel').value = diaAtual; carregarAgenda(); };
+  $('diaProx').onclick = () => { diaAtual = addDias(diaAtual, 1); $('diaSel').value = diaAtual; carregarAgenda(); };
+  $('diaHoje').onclick = () => { diaAtual = hojeK(); $('diaSel').value = diaAtual; carregarAgenda(); };
+
+  async function carregarAgenda() {
+    $('diaTitulo').textContent = tituloDia(diaAtual);
+    const { data, error } = await db.from('horarios')
+      .select('id,inicio,status,reservas(id,cliente_nome,cliente_whatsapp,servicos(nome))')
+      .gte('inicio', iso(diaAtual, '00:00'))
+      .lt('inicio', iso(addDias(diaAtual, 1), '00:00'))
+      .order('inicio');
+    if (error) return falhou(error, 'Não foi possível carregar a agenda.');
+    slotsDia = data || [];
+    renderAgenda();
+  }
+
+  function reservaDe(s) { return Array.isArray(s.reservas) ? s.reservas[0] : s.reservas; }
+
+  function renderAgenda() {
+    const box = $('lista');
+    const n = { livre: 0, reservado: 0, bloqueado: 0 };
+    slotsDia.forEach(s => n[s.status]++);
+    $('diaStats').innerHTML = `<span><b>${n.reservado}</b> reservados</span><span><b>${n.livre}</b> livres</span><span><b>${n.bloqueado}</b> bloqueados</span>`;
+    if (!slotsDia.length) {
+      box.innerHTML = '<div class="empty">Nenhum horário aberto neste dia.<br>Use a aba <b>Abrir horários</b> ou adicione um horário avulso abaixo.</div>';
+      return;
+    }
+    const agora = Date.now();
+    box.innerHTML = '';
+    for (const s of slotsDia) {
+      const r = reservaDe(s);
+      const passado = new Date(s.inicio).getTime() < agora;
+      const div = document.createElement('div');
+      div.className = 'slot ' + s.status;
+      let info = '', acts = '';
+      if (s.status === 'reservado' && r) {
+        const tel = String(r.cliente_whatsapp).replace(/\D/g, '');
+        const wa = `https://wa.me/${tel.startsWith('55') ? tel : '55' + tel}?text=${encodeURIComponent(`Olá ${r.cliente_nome}! Aqui é o Junior, da barbearia. Confirmando seu horário hoje às ${hora(s.inicio)}.`)}`;
+        info = `<div class="name">${esc(r.cliente_nome)}</div><div class="det">${r.servicos?.nome ? esc(r.servicos.nome) + ' · ' : ''}${esc(r.cliente_whatsapp)}</div>`;
+        acts = `<a class="btn btn-ghost btn-sm" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>` +
+               (passado ? '' : `<button class="btn btn-danger btn-sm" data-a="cancelar" data-id="${s.id}">Cancelar</button>`);
+      } else if (s.status === 'livre') {
+        info = `<span class="badge b-livre">Livre</span>`;
+        acts = `<button class="btn btn-ghost btn-sm" data-a="bloquear" data-id="${s.id}">Bloquear</button><button class="btn btn-ghost btn-sm" data-a="excluir" data-id="${s.id}" aria-label="Excluir">✕</button>`;
+      } else {
+        info = `<span class="badge b-${s.status}">${s.status === 'bloqueado' ? 'Bloqueado' : 'Reservado'}</span>`;
+        acts = `<button class="btn btn-ghost btn-sm" data-a="liberar" data-id="${s.id}">Liberar</button><button class="btn btn-ghost btn-sm" data-a="excluir" data-id="${s.id}" aria-label="Excluir">✕</button>`;
+      }
+      div.innerHTML = `<div class="t">${hora(s.inicio)}</div><div class="info">${info}</div><div class="acts">${acts}</div>`;
+      box.appendChild(div);
+    }
+  }
+
+  $('lista').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    const id = Number(b.dataset.id), a = b.dataset.a;
+    b.disabled = true;
+    let error;
+    if (a === 'bloquear') ({ error } = await db.from('horarios').update({ status: 'bloqueado' }).eq('id', id).eq('status', 'livre'));
+    if (a === 'liberar') ({ error } = await db.from('horarios').update({ status: 'livre' }).eq('id', id).neq('status', 'reservado'));
+    if (a === 'excluir') ({ error } = await db.from('horarios').delete().eq('id', id).neq('status', 'reservado'));
+    if (a === 'cancelar') {
+      const s = slotsDia.find(x => x.id === id), r = s && reservaDe(s);
+      if (!confirm(`Cancelar o horário de ${r?.cliente_nome || 'cliente'} às ${hora(s.inicio)}? O horário volta a ficar livre no site.`)) { b.disabled = false; return; }
+      ({ error } = await db.from('reservas').delete().eq('horario_id', id));
+      if (!error) ({ error } = await db.from('horarios').update({ status: 'livre' }).eq('id', id));
+    }
+    if (error) return falhou(error);
+    carregarAgenda();
+  });
+
+  $('fecharDia').onclick = async () => {
+    if (!confirm('Fechar o dia? Todos os horários livres deste dia ficam bloqueados. As reservas continuam.')) return;
+    const { error } = await db.from('horarios').update({ status: 'bloqueado' })
+      .gte('inicio', iso(diaAtual, '00:00')).lt('inicio', iso(addDias(diaAtual, 1), '00:00')).eq('status', 'livre');
+    if (error) return falhou(error);
+    toast('Dia fechado.'); carregarAgenda();
+  };
+  $('reabrirDia').onclick = async () => {
+    const { error } = await db.from('horarios').update({ status: 'livre' })
+      .gte('inicio', iso(diaAtual, '00:00')).lt('inicio', iso(addDias(diaAtual, 1), '00:00'))
+      .eq('status', 'bloqueado').gt('inicio', new Date().toISOString());
+    if (error) return falhou(error);
+    toast('Dia reaberto.'); carregarAgenda();
+  };
+  $('pausa').onclick = () => $('boxPausa').classList.toggle('hidden');
+  $('aplicarPausa').onclick = async () => {
+    const de = $('pausaDe').value, ate = $('pausaAte').value;
+    if (!de || !ate || toMin(ate) <= toMin(de)) return toast('Confira o intervalo.', true);
+    const { error } = await db.from('horarios').update({ status: 'bloqueado' })
+      .gte('inicio', iso(diaAtual, de)).lt('inicio', iso(diaAtual, ate)).eq('status', 'livre');
+    if (error) return falhou(error);
+    $('boxPausa').classList.add('hidden'); toast('Intervalo bloqueado.'); carregarAgenda();
+  };
+  $('addAvulso').onclick = async () => {
+    const t = $('avulso').value; if (!t) return toast('Escolha o horário.', true);
+    const { error } = await db.from('horarios').upsert({ inicio: iso(diaAtual, t) }, { onConflict: 'inicio', ignoreDuplicates: true });
+    if (error) return falhou(error);
+    $('avulso').value = ''; toast('Horário adicionado.'); carregarAgenda();
+  };
+
+  // ===== Abrir horários =====
+  const NOMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const PADRAO = { dias: [1, 2, 3, 4, 5, 6], ini: '08:30', fim: '20:00', int: '30', alm: true, almDe: '12:00', almAte: '13:00' };
+  let cfg = PADRAO;
+  try { cfg = { ...PADRAO, ...JSON.parse(localStorage.getItem('jb-cfg') || '{}') }; } catch (_) {}
+  [1, 2, 3, 4, 5, 6, 0].forEach(d => {
+    const l = document.createElement('label'); l.className = 'wd';
+    l.innerHTML = `<input type="checkbox" value="${d}" ${cfg.dias.includes(d) ? 'checked' : ''}><span>${NOMES[d]}</span>`;
+    $('gDias').appendChild(l);
+  });
+  $('gDe').value = hojeK(); $('gAte').value = addDias(hojeK(), 13);
+  $('gIni').value = cfg.ini; $('gFim').value = cfg.fim; $('gInt').value = cfg.int;
+  $('gAlm').checked = cfg.alm; $('gAlmDe').value = cfg.almDe; $('gAlmAte').value = cfg.almAte;
+
+  function lerForm() {
+    return {
+      de: $('gDe').value, ate: $('gAte').value,
+      dias: [...$('gDias').querySelectorAll('input:checked')].map(i => Number(i.value)),
+      ini: $('gIni').value, fim: $('gFim').value, int: $('gInt').value,
+      alm: $('gAlm').checked, almDe: $('gAlmDe').value, almAte: $('gAlmAte').value
+    };
+  }
+  function montarHorarios(f) {
+    const linhas = [];
+    if (!f.de || !f.ate || f.ate < f.de || !f.ini || !f.fim) return linhas;
+    const ini = toMin(f.ini), fim = toMin(f.fim), passo = Number(f.int);
+    const aIni = f.alm ? toMin(f.almDe) : -1, aFim = f.alm ? toMin(f.almAte) : -1;
+    const agora = Date.now();
+    let k = f.de, guarda = 0;
+    while (k <= f.ate && guarda++ < 120) {
+      if (f.dias.includes(diaSemana(k))) {
+        for (let m = ini; m + passo <= fim; m += passo) {
+          if (f.alm && m < aFim && m + passo > aIni) continue;
+          const t = iso(k, fromMin(m));
+          if (new Date(t).getTime() > agora) linhas.push({ inicio: t });
+        }
+      }
+      k = addDias(k, 1);
+    }
+    return linhas;
+  }
+  function atualizarPrevia() {
+    const f = lerForm();
+    $('gAlmBox').style.display = f.alm ? '' : 'none';
+    const n = montarHorarios(f).length;
+    $('gPrevia').textContent = n ? `Serão abertos até ${n} horários (os que já existem são ignorados).` : 'Nenhum horário com essas opções. Confira as datas e os dias.';
+    $('gerar').disabled = !n;
+  }
+  $('p-abrir').addEventListener('input', atualizarPrevia);
+  $('p-abrir').addEventListener('change', atualizarPrevia);
+
+  $('gerar').onclick = async () => {
+    const f = lerForm(), linhas = montarHorarios(f);
+    if (!linhas.length) return;
+    try { localStorage.setItem('jb-cfg', JSON.stringify({ dias: f.dias, ini: f.ini, fim: f.fim, int: f.int, alm: f.alm, almDe: f.almDe, almAte: f.almAte })); } catch (_) {}
+    $('gerar').disabled = true; $('gerar').textContent = 'Abrindo…';
+    for (let i = 0; i < linhas.length; i += 500) {
+      const { error } = await db.from('horarios').upsert(linhas.slice(i, i + 500), { onConflict: 'inicio', ignoreDuplicates: true });
+      if (error) { $('gerar').textContent = 'Abrir horários'; $('gerar').disabled = false; return falhou(error); }
+    }
+    $('gerar').textContent = 'Abrir horários'; $('gerar').disabled = false;
+    toast('Horários abertos! Já aparecem no site.');
+    carregarAgenda();
+  };
+
+  $('limpar').onclick = async () => {
+    const f = lerForm();
+    if (!f.de || !f.ate || f.ate < f.de) return toast('Confira as datas.', true);
+    if (!confirm(`Apagar os horários livres e bloqueados de ${f.de.split('-').reverse().join('/')} até ${f.ate.split('-').reverse().join('/')}? As reservas continuam.`)) return;
+    const { error } = await db.from('horarios').delete()
+      .gte('inicio', iso(f.de, '00:00')).lt('inicio', iso(addDias(f.ate, 1), '00:00')).neq('status', 'reservado');
+    if (error) return falhou(error);
+    toast('Horários livres apagados.'); carregarAgenda();
+  };
+
+  // ===== Serviços =====
+  let servicos = [];
+  async function carregarServicos() {
+    const { data, error } = await db.from('servicos').select('*').order('ativo', { ascending: false }).order('preco', { ascending: true, nullsFirst: false });
+    if (error) return falhou(error, 'Não foi possível carregar os serviços.');
+    servicos = data || [];
+    const box = $('listaServicos');
+    if (!servicos.length) { box.innerHTML = '<div class="empty" style="margin-bottom:12px">Nenhum serviço cadastrado ainda. Enquanto não houver serviços, o cliente agenda só escolhendo o horário.</div>'; return; }
+    box.innerHTML = servicos.map(s => `
+      <div class="svcrow ${s.ativo ? '' : 'off'}">
+        <div class="info"><div class="name" style="font-weight:600">${esc(s.nome)}</div>
+          <div class="hint">${s.preco != null ? moeda(s.preco) : 'Sem preço'} · ${s.duracao_min} min${s.ativo ? '' : ' · oculto no site'}</div></div>
+        <button class="btn btn-ghost btn-sm" data-s="editar" data-id="${s.id}">Editar</button>
+        <button class="btn btn-ghost btn-sm" data-s="ativo" data-id="${s.id}">${s.ativo ? 'Ocultar' : 'Mostrar'}</button>
+      </div>`).join('');
+  }
+  $('listaServicos').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-s]'); if (!b) return;
+    const s = servicos.find(x => x.id === Number(b.dataset.id)); if (!s) return;
+    if (b.dataset.s === 'editar') {
+      $('svcId').value = s.id; $('svcNome').value = s.nome; $('svcPreco').value = s.preco ?? ''; $('svcDur').value = s.duracao_min;
+      $('svcTitulo').textContent = 'Editar serviço'; $('svcCancelar').classList.remove('hidden');
+      $('svcNome').focus(); $('formSvc').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      const { error } = await db.from('servicos').update({ ativo: !s.ativo }).eq('id', s.id);
+      if (error) return falhou(error);
+      carregarServicos();
+    }
+  });
+  function limparSvc() {
+    $('formSvc').reset(); $('svcId').value = ''; $('svcDur').value = 30;
+    $('svcTitulo').textContent = 'Novo serviço'; $('svcCancelar').classList.add('hidden');
+  }
+  $('svcCancelar').onclick = limparSvc;
+  $('formSvc').addEventListener('submit', async e => {
+    e.preventDefault();
+    const nome = $('svcNome').value.trim(); if (!nome) return;
+    const linha = { nome, preco: $('svcPreco').value === '' ? null : Number($('svcPreco').value), duracao_min: Number($('svcDur').value) || 30 };
+    const id = $('svcId').value;
+    const { error } = id ? await db.from('servicos').update(linha).eq('id', Number(id)) : await db.from('servicos').insert(linha);
+    if (error) return falhou(error);
+    toast(id ? 'Serviço atualizado.' : 'Serviço adicionado.');
+    limparSvc(); carregarServicos();
+  });
+
+  db.auth.onAuthStateChange((evt) => { if (evt === 'SIGNED_OUT') mostrar(false); });
+  iniciar();
+</script>
+</body>
+</html>
