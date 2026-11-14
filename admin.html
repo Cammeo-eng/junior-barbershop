@@ -5,29 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Painel do barbeiro · Junior Barbershop</title>
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#111111">
+<meta name="theme-color" content="#EDEFEC">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --bg:#111111; --card:#1a1a1a; --card2:#222; --line:#2e2e2e;
-    --text:#f2ede4; --muted:#9d978d; --brass:#c9a46a;
-    --ok:#4fbf7a; --err:#e06a5a; --warn:#d9a441; --r:14px;
+    --bg:#EDEFEC; --card:#F8F9F7; --card2:#E2E6E2; --line:#D3D8D3;
+    --text:#1D2327; --muted:#5F6B70; --brass:#7A1F27;
+    --ok:#2F6B48; --err:#7A1F27; --warn:#d9a441; --r:14px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.5;min-height:100vh}
+  body{background:var(--bg);color:var(--text);font-family:Figtree,system-ui,sans-serif;font-size:15px;line-height:1.5;min-height:100vh}
   button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
   input,select{font:inherit;color:inherit}
   .wrap{max-width:760px;margin:0 auto;padding:0 18px}
-  h1,h2,h3{font-family:Oswald,sans-serif;font-weight:500;letter-spacing:.03em}
+  h1,h2,h3{font-family:Figtree,sans-serif;font-weight:700}
 
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap;transition:background .15s,border-color .15s,opacity .15s}
-  .btn-brass{background:var(--brass);color:#16120c}
+  .btn-brass{background:var(--brass);color:#fff}
   .btn-ghost{border:1px solid var(--line)}
   .btn-ghost:hover{border-color:var(--brass)}
-  .btn-danger{border:1px solid #5a2a24;color:#f0a197}
+  .btn-danger{border:1px solid #c9a0a3;color:#7A1F27}
   .btn-sm{padding:6px 12px;font-size:13px}
   .btn[disabled]{opacity:.45;pointer-events:none}
   .full{width:100%}
@@ -41,13 +41,13 @@
 
   /* Login */
   .login{max-width:380px;margin:12vh auto 0;padding:0 20px}
-  .login h1{font-size:34px;text-align:center;line-height:1}
-  .login .sub{text-align:center;color:var(--brass);letter-spacing:.4em;font-family:Oswald,sans-serif;font-size:13px;margin:8px 0 30px;padding-left:.4em}
+  .login h1{font-family:"Big Shoulders Display",sans-serif;font-weight:800;font-size:64px;text-align:center;line-height:.9}
+  .login .sub{text-align:center;color:var(--muted);font-size:15px;margin:10px 0 30px}
   .msg{font-size:14px;margin-top:10px;min-height:1.2em}
   .msg.err{color:var(--err)}
 
   /* App */
-  .top{position:sticky;top:0;z-index:5;background:rgba(17,17,17,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .top{position:sticky;top:0;z-index:5;background:rgba(237,239,236,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
   .top .wrap{display:flex;align-items:center;justify-content:space-between;height:58px}
   .top h1{font-size:19px}
   .top h1 span{color:var(--brass)}
@@ -67,16 +67,16 @@
   .stats b{color:var(--text)}
   .dayactions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
   .slot{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:8px}
-  .slot .t{font-family:Oswald,sans-serif;font-size:19px;width:56px;font-variant-numeric:tabular-nums}
+  .slot .t{font-family:"Big Shoulders Display",sans-serif;font-weight:800;font-size:19px;width:56px;font-variant-numeric:tabular-nums}
   .slot .info{flex:1;min-width:0}
   .slot .name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .slot .det{color:var(--muted);font-size:13px}
   .slot .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
   .badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
-  .b-livre{background:#1d2a20;color:var(--ok)}
-  .b-reservado{background:#2a2316;color:var(--brass)}
-  .b-bloqueado{background:#262626;color:var(--muted)}
-  .slot.reservado{border-color:#4a3e28}
+  .b-livre{background:#DCEBE1;color:var(--ok)}
+  .b-reservado{background:#F1DDDF;color:var(--brass)}
+  .b-bloqueado{background:#E2E6E2;color:var(--muted)}
+  .slot.reservado{border-color:#c9a0a3}
   .slot.bloqueado{opacity:.6}
   .add{display:flex;gap:8px;margin-top:14px}
   .add .in{flex:1}
@@ -85,7 +85,7 @@
   .wd{position:relative}
   .wd input{position:absolute;opacity:0;pointer-events:none}
   .wd span{display:block;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:600;font-size:14px;cursor:pointer}
-  .wd input:checked + span{background:var(--brass);border-color:var(--brass);color:#16120c}
+  .wd input:checked + span{background:var(--text);border-color:var(--text);color:#fff}
   .wd input:focus-visible + span{outline:2px solid var(--brass);outline-offset:2px}
   .check{display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer}
   .check input{width:18px;height:18px;accent-color:var(--brass)}
@@ -96,9 +96,9 @@
 
   .empty{padding:20px;border:1px dashed var(--line);border-radius:var(--r);color:var(--muted);text-align:center}
 
-  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#262626;border:1px solid var(--line);padding:12px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;max-width:90vw;z-index:20}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;border:1px solid var(--text);padding:12px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;max-width:90vw;z-index:20}
   .toast.show{opacity:1;transform:translateX(-50%)}
-  .toast.err{border-color:#5a2a24;color:#f0a197}
+  .toast.err{background:var(--brass);border-color:var(--brass)}
   .hidden{display:none!important}
   @media (max-width:520px){.slot{flex-wrap:wrap}.slot .acts{width:100%;justify-content:flex-start;padding-left:68px}}
 </style>
@@ -107,8 +107,8 @@
 
 <!-- Login -->
 <section class="login hidden" id="telaLogin">
-  <h1>JUNIOR</h1>
-  <div class="sub">PAINEL DO BARBEIRO</div>
+  <h1>Junior</h1>
+  <div class="sub">Painel do barbeiro</div>
   <form id="formLogin">
     <div class="field"><label for="email">E-mail</label><input class="in" id="email" type="email" autocomplete="username" required></div>
     <div class="field"><label for="senha">Senha</label><input class="in" id="senha" type="password" autocomplete="current-password" required></div>
@@ -121,7 +121,7 @@
 <div class="hidden" id="telaApp">
   <header class="top">
     <div class="wrap">
-      <h1>JUNIOR <span>· PAINEL</span></h1>
+      <h1>Junior <span>painel</span></h1>
       <div style="display:flex;gap:6px">
         <a class="btn btn-ghost btn-sm" href="index.html" target="_blank">Ver site</a>
         <button class="btn btn-ghost btn-sm" id="sair">Sair</button>
