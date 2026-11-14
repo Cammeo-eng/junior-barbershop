@@ -496,13 +496,33 @@
   };
 
   // ===== Serviços =====
+  const LISTA_BASICA = [
+    { nome: 'Corte', preco: 35, duracao_min: 30 },
+    { nome: 'Barba', preco: 25, duracao_min: 30 },
+    { nome: 'Corte e barba', preco: 55, duracao_min: 60 },
+    { nome: 'Corte infantil', preco: 30, duracao_min: 30 },
+    { nome: 'Pezinho', preco: 10, duracao_min: 15 },
+    { nome: 'Sobrancelha', preco: 10, duracao_min: 15 },
+    { nome: 'Pigmentação', preco: 20, duracao_min: 15 },
+    { nome: 'Luzes', preco: 80, duracao_min: 60 },
+    { nome: 'Platinado', preco: 120, duracao_min: 90 }
+  ];
   let servicos = [];
   async function carregarServicos() {
     const { data, error } = await db.from('servicos').select('*').order('ativo', { ascending: false }).order('preco', { ascending: true, nullsFirst: false });
     if (error) return falhou(error, 'Não foi possível carregar os serviços.');
     servicos = data || [];
     const box = $('listaServicos');
-    if (!servicos.length) { box.innerHTML = '<div class="empty" style="margin-bottom:12px">Nenhum serviço cadastrado ainda. Enquanto não houver serviços, o cliente agenda só escolhendo o horário.</div>'; return; }
+    if (!servicos.length) {
+      box.innerHTML = '<div class="empty" style="margin-bottom:12px">Nenhum serviço cadastrado ainda.<br>Comece com a lista básica de barbearia e ajuste os preços depois.<br><button class="btn btn-brass" style="margin-top:14px" id="addLista" type="button">Adicionar lista básica</button></div>';
+      $('addLista').onclick = async () => {
+        $('addLista').disabled = true;
+        const { error } = await db.from('servicos').insert(LISTA_BASICA);
+        if (error) { $('addLista').disabled = false; return falhou(error); }
+        toast('Serviços adicionados. Confira os preços.'); carregarServicos();
+      };
+      return;
+    }
     box.innerHTML = servicos.map(s => `
       <div class="svcrow ${s.ativo ? '' : 'off'}">
         <div class="info"><div class="name" style="font-weight:600">${esc(s.nome)}</div>
