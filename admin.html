@@ -82,6 +82,18 @@
   .add .in{flex:1}
 
   .weekdays{display:flex;gap:6px;flex-wrap:wrap}
+  .semana{border-top:1px solid var(--line)}
+  .in{min-width:0}
+  .dsem .in{padding:9px 8px}
+  a.btn{color:inherit}
+  .row>*{min-width:0}
+  .dsem{display:grid;grid-template-columns:92px minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .dsem .check{margin:0}
+  .dsem.off .in{opacity:.35;pointer-events:none}
+  .senha{position:relative}
+  .senha .in{padding-right:76px}
+  .ver{position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:6px 10px;border-radius:8px;font-size:13px;font-weight:600;color:var(--muted)}
+  .ver:hover{color:var(--text);background:var(--card2)}
   .wd{position:relative}
   .wd input{position:absolute;opacity:0;pointer-events:none}
   .wd span{display:block;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:600;font-size:14px;cursor:pointer}
@@ -111,7 +123,7 @@
   <div class="sub">Painel do barbeiro</div>
   <form id="formLogin">
     <div class="field"><label for="email">E-mail</label><input class="in" id="email" type="email" autocomplete="username" required></div>
-    <div class="field"><label for="senha">Senha</label><input class="in" id="senha" type="password" autocomplete="current-password" required></div>
+    <div class="field"><label for="senha">Senha</label><div class="senha"><input class="in" id="senha" type="password" autocomplete="current-password" required><button class="ver" type="button" id="verSenha" aria-pressed="false">Mostrar</button></div></div>
     <button class="btn btn-brass full" type="submit" id="btnEntrar">Entrar</button>
     <p class="msg" id="msgLogin"></p>
   </form>
@@ -176,12 +188,10 @@
           <div class="field"><label for="gAte">Até</label><input class="in" type="date" id="gAte"></div>
         </div>
         <div class="field">
-          <label>Dias da semana</label>
-          <div class="weekdays" id="gDias"></div>
+          <label>Dias e horário de cada dia</label>
+          <div class="semana" id="gDias"></div>
         </div>
-        <div class="row3">
-          <div class="field"><label for="gIni">Abre às</label><input class="in" type="time" id="gIni" value="08:30"></div>
-          <div class="field"><label for="gFim">Fecha às</label><input class="in" type="time" id="gFim" value="20:00"></div>
+        <div class="row">
           <div class="field"><label for="gInt">Cada horário</label>
             <select class="in" id="gInt">
               <option value="20">20 min</option><option value="30" selected>30 min</option>
@@ -276,6 +286,12 @@
     if (error) { $('msgLogin').className = 'msg err'; $('msgLogin').textContent = 'E-mail ou senha incorretos.'; return; }
     mostrar(true);
   });
+  $('verSenha').onclick = () => {
+    const i = $('senha'), ver = i.type === 'password';
+    i.type = ver ? 'text' : 'password';
+    $('verSenha').textContent = ver ? 'Esconder' : 'Mostrar';
+    $('verSenha').setAttribute('aria-pressed', ver);
+  };
   $('sair').onclick = async () => { await db.auth.signOut(); mostrar(false); };
 
   // ===== Abas =====
@@ -392,37 +408,50 @@
   };
 
   // ===== Abrir horários =====
-  const NOMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  const PADRAO = { dias: [1, 2, 4, 5, 6], ini: '08:30', fim: '20:00', int: '30', alm: true, almDe: '12:00', almAte: '13:00' };
+  const NOMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const SEMANA_PADRAO = {
+    0: null, 1: ['08:30', '19:00'], 2: ['08:30', '19:00'], 3: null,
+    4: ['08:30', '19:00'], 5: ['08:30', '19:00'], 6: ['09:00', '18:00']
+  };
+  const PADRAO = { semana: SEMANA_PADRAO, int: '30', alm: true, almDe: '12:00', almAte: '13:00' };
   let cfg = PADRAO;
-  try { cfg = { ...PADRAO, ...JSON.parse(localStorage.getItem('jb-cfg') || '{}') }; } catch (_) {}
+  try { cfg = { ...PADRAO, ...JSON.parse(localStorage.getItem('jb-cfg2') || '{}') }; } catch (_) {}
   [1, 2, 3, 4, 5, 6, 0].forEach(d => {
-    const l = document.createElement('label'); l.className = 'wd';
-    l.innerHTML = `<input type="checkbox" value="${d}" ${cfg.dias.includes(d) ? 'checked' : ''}><span>${NOMES[d]}</span>`;
-    $('gDias').appendChild(l);
+    const h = cfg.semana[d], padrao = SEMANA_PADRAO[d] || ['08:30', '19:00'];
+    const row = document.createElement('div');
+    row.className = 'dsem' + (h ? '' : ' off'); row.dataset.d = d;
+    row.innerHTML = `<label class="check"><input type="checkbox" ${h ? 'checked' : ''}> ${NOMES[d]}</label>` +
+      `<input class="in" type="time" aria-label="${NOMES[d]}: abre às" value="${(h || padrao)[0]}">` +
+      `<input class="in" type="time" aria-label="${NOMES[d]}: fecha às" value="${(h || padrao)[1]}">`;
+    row.querySelector('input[type=checkbox]').onchange = e => row.classList.toggle('off', !e.target.checked);
+    $('gDias').appendChild(row);
   });
   $('gDe').value = hojeK(); $('gAte').value = addDias(hojeK(), 13);
-  $('gIni').value = cfg.ini; $('gFim').value = cfg.fim; $('gInt').value = cfg.int;
+  $('gInt').value = cfg.int;
   $('gAlm').checked = cfg.alm; $('gAlmDe').value = cfg.almDe; $('gAlmAte').value = cfg.almAte;
 
   function lerForm() {
+    const semana = {};
+    $('gDias').querySelectorAll('.dsem').forEach(r => {
+      const [c, a, f] = r.querySelectorAll('input');
+      semana[r.dataset.d] = c.checked && a.value && f.value ? [a.value, f.value] : null;
+    });
     return {
-      de: $('gDe').value, ate: $('gAte').value,
-      dias: [...$('gDias').querySelectorAll('input:checked')].map(i => Number(i.value)),
-      ini: $('gIni').value, fim: $('gFim').value, int: $('gInt').value,
+      de: $('gDe').value, ate: $('gAte').value, semana, int: $('gInt').value,
       alm: $('gAlm').checked, almDe: $('gAlmDe').value, almAte: $('gAlmAte').value
     };
   }
   function montarHorarios(f) {
     const linhas = [];
-    if (!f.de || !f.ate || f.ate < f.de || !f.ini || !f.fim) return linhas;
-    const ini = toMin(f.ini), fim = toMin(f.fim), passo = Number(f.int);
+    if (!f.de || !f.ate || f.ate < f.de) return linhas;
+    const passo = Number(f.int);
     const aIni = f.alm ? toMin(f.almDe) : -1, aFim = f.alm ? toMin(f.almAte) : -1;
     const agora = Date.now();
     let k = f.de, guarda = 0;
     while (k <= f.ate && guarda++ < 120) {
-      if (f.dias.includes(diaSemana(k))) {
-        for (let m = ini; m + passo <= fim; m += passo) {
+      const h = f.semana[diaSemana(k)];
+      if (h) {
+        for (let m = toMin(h[0]); m + passo <= toMin(h[1]); m += passo) {
           if (f.alm && m < aFim && m + passo > aIni) continue;
           const t = iso(k, fromMin(m));
           if (new Date(t).getTime() > agora) linhas.push({ inicio: t });
@@ -445,7 +474,7 @@
   $('gerar').onclick = async () => {
     const f = lerForm(), linhas = montarHorarios(f);
     if (!linhas.length) return;
-    try { localStorage.setItem('jb-cfg', JSON.stringify({ dias: f.dias, ini: f.ini, fim: f.fim, int: f.int, alm: f.alm, almDe: f.almDe, almAte: f.almAte })); } catch (_) {}
+    try { localStorage.setItem('jb-cfg2', JSON.stringify({ semana: f.semana, int: f.int, alm: f.alm, almDe: f.almDe, almAte: f.almAte })); } catch (_) {}
     $('gerar').disabled = true; $('gerar').textContent = 'Abrindo…';
     for (let i = 0; i < linhas.length; i += 500) {
       const { error } = await db.from('horarios').upsert(linhas.slice(i, i + 500), { onConflict: 'inicio', ignoreDuplicates: true });
